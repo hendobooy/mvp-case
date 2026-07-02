@@ -1,0 +1,490 @@
+{
+  "name": "Movimentação estoque",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.2.100:8080/message/sendText/meu_zap",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "F244CA8B0DE8-4439-94B0-EC9E2570503E"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "=120363411663740593@g.us"
+            },
+            {
+              "name": "text",
+              "value": "=📦 *Movimentação de Estoque*\nProduto: {{ $json.Nome }}\nQuantidade Antiga: {{ $('Captura Update').item.json.body.data.previous_rows[0].Estoque }}\nQuantidade Atual: {{ $('Get a row').item.json.Estoque }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        320,
+        112
+      ],
+      "id": "622aa184-2e71-4ad3-b74f-48e624c9fe36",
+      "name": "Envia mensagem"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Captura Update').item.json.body.data.previous_rows[0].Preço != $json.Preço ? 'preco' : ($('Captura Update').item.json.body.data.previous_rows[0].Estoque != $json.Estoque ? 'estoque' : 'sem_alteracao') }}",
+                    "rightValue": "preco",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "aa0c8f26-c66b-4428-ac69-793584116120"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "alteracao_valor"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "815f3f76-f059-46f5-972c-5913acaebcc6",
+                    "leftValue": "={{ $('Captura Update').item.json.body.data.previous_rows[0].Preço != $json.Preço ? 'preco' : ($('Captura Update').item.json.body.data.previous_rows[0].Estoque != $json.Estoque ? 'estoque' : 'sem_alteracao') }}",
+                    "rightValue": "estoque",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "alteracao_estoque"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -32,
+        0
+      ],
+      "id": "3f60519d-8405-40f6-8a50-75fa07c1c52e",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.2.100:8080/message/sendText/meu_zap",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "F244CA8B0DE8-4439-94B0-EC9E2570503E"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "=120363411663740593@g.us"
+            },
+            {
+              "name": "text",
+              "value": "=⚠️ *Atualização de Preço*\nProduto: {{ $json.Nome }}\nDe: R$ {{ $('Captura Update').item.json.body.data.previous_rows[0]['Preço'] }}\nPara: R$ {{ $('Get a row').item.json['Preço'] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        320,
+        -48
+      ],
+      "id": "a3b3ca5c-79de-4a7b-9d1b-58fdf642fac8",
+      "name": "Envia mensagem1"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "workspaceId": "wz605whh",
+        "projectId": "phvscl929cp4d1q",
+        "table": "mh6xuayky5ol2tf",
+        "id": "={{ $('Captura Update').item.json.body.data.rows[0].Id }}"
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 3,
+      "position": [
+        -192,
+        -16
+      ],
+      "id": "970ebf21-6e6d-4457-86d1-15074cac64cb",
+      "name": "Get a row",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "yakvdFU062LIv5Vw",
+          "name": "NocoDB Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e26b1ceb-0f64-4c68-aa44-d4d21f196dc0",
+              "leftValue": "={{ $json[`lock_produto2_${$('Captura Update').first().json.body.data.rows[0].Id}`] }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -768,
+        0
+      ],
+      "id": "867bfcd4-293f-4770-a119-6ad8ce88e6d8",
+      "name": "If"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -528,
+        -16
+      ],
+      "id": "5ea5660f-1779-4b97-bba5-33af5a26550e",
+      "name": "Wait",
+      "webhookId": "1acf7894-fba3-4b6d-b874-519b0be2b18b"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=lock_produto_{{ $('Captura Update').item.json.body.data.previous_rows[0].Id }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        -16
+      ],
+      "id": "09d0ee8b-63b4-475d-84fc-42fd4c1e14a3",
+      "name": "Redis1",
+      "notesInFlow": false,
+      "credentials": {
+        "redis": {
+          "id": "ztRn3vjIfNvgWBUZ",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook/movimento",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1152,
+        0
+      ],
+      "id": "061ca73f-ea71-4519-b767-d9e3feb28a10",
+      "name": "Captura Update",
+      "webhookId": "2e42f383-99f0-4711-bf1a-6454acf0d68b"
+    },
+    {
+      "parameters": {
+        "content": "cria uma chave única no banco de dados temporário usando o ID do produto (ex: lock_produto_30) e soma +1 cada vez que chega requisição na porta. O primeiro webhook (a tecla 2) recebe o valor 1. Os outros webhooks recebem 2, 3, 4 e 5",
+        "height": 208,
+        "width": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1088,
+        -240
+      ],
+      "id": "9c1756e6-55cd-459d-90ae-312a75bcfe64",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "operation": "incr",
+        "key": "=lock_produto2_{{ $json.body.data.rows[0].Id }}",
+        "expire": true,
+        "ttl": 10
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -944,
+        0
+      ],
+      "id": "158256fd-5547-4f75-aa2b-65087fd93481",
+      "name": "Cria lista",
+      "notesInFlow": false,
+      "credentials": {
+        "redis": {
+          "id": "ztRn3vjIfNvgWBUZ",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "OBS: Essa camada é criada para que o usuário tenha tempo de escrever no banco a alteração com calma",
+        "height": 96,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1024,
+        160
+      ],
+      "id": "7c746f24-aa44-4f54-a486-9814d853a9ba",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        144
+      ],
+      "id": "27f43596-8cb8-455a-9873-82af634e79bb",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "content": "verifica se é a entrada que queremos (1), se não for, nada acontece",
+        "height": 112,
+        "width": 214
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -832,
+        -128
+      ],
+      "id": "3eb4e3a4-e79d-4894-a27d-b88d65cbb525",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "aguarda um tempinho de 5 seg -> limpa o cache -> puxa o atual valor da coluna alterada",
+        "height": 80,
+        "width": 486
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -112
+      ],
+      "id": "09603314-158d-4dd6-9122-b78bbdae8f87",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "decide qual caminho seguir com base no tipo da alteração (preço ou estoque)",
+        "height": 80,
+        "width": 278
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -112
+      ],
+      "id": "38fe9372-fe64-425e-8038-d0af908ecb16",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "faz os alertas no grupo de alertas",
+        "height": 80,
+        "width": 198
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        512,
+        32
+      ],
+      "id": "8a8e9d68-5506-4988-965a-85e6432c3470",
+      "name": "Sticky Note5"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Envia mensagem1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Envia mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Redis1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Envia mensagem": {
+      "main": [
+        []
+      ]
+    },
+    "Envia mensagem1": {
+      "main": [
+        []
+      ]
+    },
+    "Redis1": {
+      "main": [
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Captura Update": {
+      "main": [
+        [
+          {
+            "node": "Cria lista",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cria lista": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "71204fcf-1f6d-4350-91ba-93430a2df925",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "48f363dc1abd7112cba203f8309dbe7a30f91846fb0400078a827dbde4a4b871"
+  },
+  "id": "ukfSlb29bMqeFzPh",
+  "tags": []
+}

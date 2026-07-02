@@ -1,0 +1,485 @@
+{
+  "name": "Estoque baixo",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e26b1ceb-0f64-4c68-aa44-d4d21f196dc0",
+              "leftValue": "={{ $json[`lock_produto_${$('Captura Update').first().json.body.data.rows[0].Id}`] }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        304,
+        -112
+      ],
+      "id": "e0a1a78f-696c-40b3-a680-d9b1c65d4a30",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "incr",
+        "key": "=lock_produto_{{ $json.body.data.rows[0].Id }}",
+        "expire": true,
+        "ttl": 10
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        128,
+        -112
+      ],
+      "id": "b76dee57-f1ab-482a-ba2b-694599882eb3",
+      "name": "Cria lista",
+      "notesInFlow": false,
+      "credentials": {
+        "redis": {
+          "id": "ztRn3vjIfNvgWBUZ",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        720,
+        160
+      ],
+      "id": "57335d7f-0e32-4be9-9181-1dfb591531cc",
+      "name": "No Operation, do nothing"
+    },
+    {
+      "parameters": {
+        "authentication": "nocoDbApiToken",
+        "operation": "getAll",
+        "workspaceId": "wz605whh",
+        "projectId": "phvscl929cp4d1q",
+        "table": "mh6xuayky5ol2tf",
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.nocoDb",
+      "typeVersion": 3,
+      "position": [
+        800,
+        -128
+      ],
+      "id": "a319f787-175d-4ee7-b3e4-74a8b3938ecf",
+      "name": "Get many rows",
+      "credentials": {
+        "nocoDbApiToken": {
+          "id": "yakvdFU062LIv5Vw",
+          "name": "NocoDB Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        976,
+        -144
+      ],
+      "id": "0968df6e-ffc1-4193-baf7-504ccf9308f9",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook/notificacao-preco",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -80,
+        -112
+      ],
+      "id": "3f0c887f-969a-45b5-91f9-f93384e2a8f8",
+      "name": "Captura Update",
+      "webhookId": "2e42f383-99f0-4711-bf1a-6454acf0d68b"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        480,
+        -128
+      ],
+      "id": "5b53a7fa-1f94-47f4-9fec-b6388ed8794b",
+      "name": "Wait",
+      "webhookId": "1acf7894-fba3-4b6d-b874-519b0be2b18b"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=lock_produto_{{ $('Captura Update').item.json.body.data.previous_rows[0].Id }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        656,
+        -128
+      ],
+      "id": "4a60db89-c403-48e6-8bd4-638202b3cc18",
+      "name": "Redis1",
+      "notesInFlow": false,
+      "credentials": {
+        "redis": {
+          "id": "ztRn3vjIfNvgWBUZ",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e5a463d2-fc17-4440-88e3-00c6059282d9",
+                    "leftValue": "={{ $json.Estoque }}",
+                    "rightValue": 20,
+                    "operator": {
+                      "type": "number",
+                      "operation": "lte"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "critico"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.Estoque }}",
+                    "rightValue": 40,
+                    "operator": {
+                      "type": "number",
+                      "operation": "lte"
+                    },
+                    "id": "f4d08497-9c37-40b2-bae1-1c3b8fadceba"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "atencao"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1296,
+        -112
+      ],
+      "id": "6bd5b28d-5e3f-4500-ad40-29a7cd1cac66",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.2.100:8080/message/sendText/meu_zap",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "F244CA8B0DE8-4439-94B0-EC9E2570503E"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "=120363411663740593@g.us"
+            },
+            {
+              "name": "text",
+              "value": "=🚨 *CRÍTICO*\nO produto {{ $json.Nome }} está com estoque muito baixo!!\nIdeal: Acima de 40\nAtual: {{ $json.Estoque }}."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1600,
+        -192
+      ],
+      "id": "2274a655-bedf-4e73-939f-bde5451c7ac8",
+      "name": "Envia mensagem"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://192.168.2.100:8080/message/sendText/meu_zap",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "F244CA8B0DE8-4439-94B0-EC9E2570503E"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "=120363411663740593@g.us"
+            },
+            {
+              "name": "text",
+              "value": "=⚠️ *Atenção* \nO produto \"{{ $json.Nome }}\" está abaixo do limite ideal!!\nIdeal: Acima de 40\nAtual: {{ $json.Estoque }}."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1600,
+        -48
+      ],
+      "id": "912fe079-8598-41fc-9829-d19441bd17b8",
+      "name": "Envia mensagem1"
+    },
+    {
+      "parameters": {
+        "content": "cria uma chave única no banco de dados temporário usando o ID do produto (ex: lock_produto_30) e soma +1 cada vez que chega requisição na porta. O primeiro webhook (a tecla 2) recebe o valor 1. Os outros webhooks recebem 2, 3, 4 e 5",
+        "height": 208,
+        "width": 224
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -368
+      ],
+      "id": "b0f427ca-3f9c-4be3-91a1-fe0df1dba63c",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "verifica se é a entrada que queremos (1), se não for, nada acontece",
+        "height": 112,
+        "width": 214
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        192,
+        -240
+      ],
+      "id": "8264ad84-314a-42d7-b3c3-60db597c2a6d",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "aguarda um tempinho de 5 seg -> limpa o cache -> puxa o atual valor de todos produtos -> faz a verificação em loop de todos",
+        "height": 80,
+        "width": 486
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        480,
+        -256
+      ],
+      "id": "dfdd869f-e63e-40e7-9d55-be3fdea24aab",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "organiza as regras de negocios -> faz os alertas no grupo de alertas",
+        "height": 80,
+        "width": 198
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1264,
+        -240
+      ],
+      "id": "acf14d98-1ec3-4acc-8229-4b4f037b10b6",
+      "name": "Sticky Note5"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, do nothing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cria lista": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Captura Update": {
+      "main": [
+        [
+          {
+            "node": "Cria lista",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Redis1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis1": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Envia mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Envia mensagem1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "71204fcf-1f6d-4350-91ba-93430a2df925",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "48f363dc1abd7112cba203f8309dbe7a30f91846fb0400078a827dbde4a4b871"
+  },
+  "id": "3dOeRNUfZ0Kz3Abu",
+  "tags": []
+}

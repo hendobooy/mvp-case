@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n_local
+    ports:
+      - "5678:5678"
+    volumes:
+      - ~/.n8n:/home/node/.n8n
+    restart: unless-stopped
